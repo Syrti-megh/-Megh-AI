@@ -1,2 +1,2 @@
-   streamlit
-   google-genai
+streamlit
+google-genai>=1.15.0
