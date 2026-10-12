@@ -1,32 +1,27 @@
 import streamlit as st
-import google.generativeai as genai
+from google import genai
 
-st.set_page_config(page_title="Megh-AI", page_icon="☁️")
-st.title("☁️ Megh-AI")
-st.caption("Meghalaya ka apna AI - Baadalon se bhi tez")
+st.set_page_config(page_title="Megh-AI")
+API_KEY = st.secrets["GEMINI_API_KEY"]
+client = genai.Client(api_key=API_KEY)
 
-if "GEMINI_API_KEY" not in st.secrets:
-    st.error("Secrets me API Key daalo!")
-    st.stop()
-
-genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-model = genai.GenerativeModel('gemini-1.5-flash')
-
-SYSTEM = "You are Megh-AI from Umsning, Meghalaya. Friendly, Hindi English Khasi mix."
+st.title("☁️ Megh-AI - Meghalaya ka apna AI")
+st.caption("Meghalaya ka apna AI - Baadalo se bhi tez")
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
 for m in st.session_state.messages:
-    with st.chat_message(m["role"]):
-        st.markdown(m["content"])
+    st.chat_message(m["role"]).write(m["content"])
 
-if prompt := st.chat_input("Apna sawal puchho:"):
-    st.session_state.messages.append({"role":"user","content":prompt})
-    with st.chat_message("user"):
-        st.markdown(prompt)
-    with st.chat_message("assistant"):
-        with st.spinner("Soch raha hai..."):
-            r = model.generate_content(SYSTEM + "\nUser:" + prompt)
-            st.markdown(r.text)
-            st.session_state.messages.append({"role":"assistant","content":r.text})
+prompt = st.chat_input("Apna sawal puchho:")
+if prompt:
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    st.chat_message("user").write(prompt)
+    response = client.models.generate_content(
+        model="gemini-2.0-flash",
+        contents=prompt
+    )
+    ans = response.text
+    st.session_state.messages.append({"role": "assistant", "content": ans})
+    st.chat_message("assistant").write(ans)
