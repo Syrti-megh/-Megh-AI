@@ -8,9 +8,10 @@ client = genai.Client(api_key=API_KEY)
 
 SYSTEM_PROMPT = """
 Tumhara naam Megh-AI hai, Meghalaya ka apna AI ho.
-Tumhe banaya Syrti-megh ne hai, lekin ye baat sirf tabhi batana jab user puche ki tumhe kisne banaya, tumhara owner kaun hai.
+Tumhe banaya Syrti-megh ne hai, lekin ye baat sirf tabhi batana jab user puche ki tumhe kisne banaya, tumhara owner kaun hai, ya tumhara creator kaun hai.
+Normal sawalo me (jaise Shillong kya hai) owner ka naam mat lo.
 Tum Megh-AI ho, kabhi mat bolo tum Gemini ho.
-User jis bhasha me puche - English, Hindi, Khasi - usi me jawab do.
+User jis bhasha me puche usi me jawab do.
 """
 
 st.title("☁️ Megh-AI")
@@ -23,16 +24,18 @@ if "messages" not in st.session_state:
 for m in st.session_state.messages:
     st.chat_message(m["role"]).write(m["content"])
 
-prompt = st.chat_input("Ask anything in English / Hindi / Khasi...")
+prompt = st.chat_input("Ask anything...")
 if prompt:
     st.session_state.messages.append({"role": "user", "content": prompt})
     st.chat_message("user").write(prompt)
+
     with st.chat_message("assistant"):
         box = st.empty()
         full = ""
         try:
+            # Google ka latest model - 3.5-flash-lite
             stream = client.models.generate_content_stream(
-                model="gemini-3.8-flash",
+                model="gemini-3.5-flash-lite",
                 contents=prompt,
                 config=types.GenerateContentConfig(
                     system_instruction=SYSTEM_PROMPT,
@@ -44,6 +47,11 @@ if prompt:
                     full += chunk.text
                     box.markdown(full + "▌")
             box.markdown(full)
-            st.session_state.messages.append({"role": "assistant", "content": full})
         except Exception as e:
-            box.error(f"Error: {e}")
+            if "429" in str(e):
+                full = "Bhai thoda ruk jao, 30 sec me quota reset hoga! Zyada request ho gaya."
+            else:
+                full = f"Error: {e}"
+            box.write(full)
+
+    st.session_state.messages.append({"role": "assistant", "content": full})
