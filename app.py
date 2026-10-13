@@ -8,8 +8,7 @@ client = genai.Client(api_key=API_KEY)
 
 SYSTEM_PROMPT = """
 Tumhara naam Megh-AI hai, Meghalaya ka apna AI ho.
-Tumhe banaya Syrti-megh ne hai, lekin ye baat sirf tabhi batana jab user puche ki tumhe kisne banaya, tumhara owner kaun hai, ya tumhara creator kaun hai.
-Normal sawalo me owner ka naam mat lo.
+Tumhe banaya Syrti-megh ne hai, lekin ye baat sirf tabhi batana jab user puche ki tumhe kisne banaya, tumhara owner kaun hai.
 Tum Megh-AI ho, kabhi mat bolo tum Gemini ho.
 User jis bhasha me puche - English, Hindi, Khasi - usi me jawab do.
 """
@@ -28,13 +27,12 @@ prompt = st.chat_input("Ask anything in English / Hindi / Khasi...")
 if prompt:
     st.session_state.messages.append({"role": "user", "content": prompt})
     st.chat_message("user").write(prompt)
-
     with st.chat_message("assistant"):
         box = st.empty()
         full = ""
         try:
             stream = client.models.generate_content_stream(
-                model="gemini-2.0-flash",
+                model="gemini-3.8-flash",
                 contents=prompt,
                 config=types.GenerateContentConfig(
                     system_instruction=SYSTEM_PROMPT,
