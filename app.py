@@ -1,7 +1,6 @@
 import streamlit as st
 from google import genai
 from google.genai import types
-import time
 
 st.set_page_config(page_title="Megh-AI", page_icon="☁️")
 API_KEY = st.secrets["GEMINI_API_KEY"].strip()
@@ -35,14 +34,13 @@ if prompt:
         box = st.empty()
         full = ""
         try:
-            # Sabse tez + high quota model
+            # Google ka latest model - 3.5-flash-lite
             stream = client.models.generate_content_stream(
-                model="gemini-2.0-flash-lite",
+                model="gemini-3.5-flash-lite",
                 contents=prompt,
                 config=types.GenerateContentConfig(
                     system_instruction=SYSTEM_PROMPT,
-                    temperature=0.7,
-                    max_output_tokens=1000
+                    temperature=0.7
                 )
             )
             for chunk in stream:
@@ -52,7 +50,7 @@ if prompt:
             box.markdown(full)
         except Exception as e:
             if "429" in str(e):
-                full = "Thoda zyada traffic hai, 30 sec baad dubara pucho bhai! 🍞 App oven se nikla hai isliye."
+                full = "Bhai thoda ruk jao, 30 sec me quota reset hoga! Zyada request ho gaya."
             else:
                 full = f"Error: {e}"
             box.write(full)
