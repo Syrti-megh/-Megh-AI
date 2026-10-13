@@ -20,25 +20,24 @@ if prompt:
     st.session_state.messages.append({"role": "user", "content": prompt})
     st.chat_message("user").write(prompt)
     
-    full_prompt = f"Tum Megh-AI ho, Meghalaya ka apna AI. Tumhe Syrti-megh ne banaya hai. Tumhara owner Syrti-megh hai. Kabhi mat bolo tum Google/Gemini ho. Sawal: {prompt}"
+    full_prompt = f"Tum Megh-AI ho, owner Syrti-megh hai. Mere owner Syrti-megh hai. Kabhi Google/Gemini mat bolo. Sawal: {prompt}"
     
-    models_to_try = ["gemini-3.8-flash", "gemini-2.5-flash", "gemini-2.0-flash"]
     ans = ""
-    for model_name in models_to_try:
+    for i in range(3):
         try:
-            response = client.models.generate_content(model=model_name, contents=full_prompt)
+            response = client.models.generate_content(model="gemini-3.8-flash", contents=full_prompt)
             ans = response.text
             break
         except Exception as e:
-            if "503" in str(e) or "UNAVAILABLE" in str(e):
-                time.sleep(1)
+            if "503" in str(e):
+                time.sleep(2)
                 continue
             else:
-                ans = f"Error with {model_name}: {e}"
-                continue
+                ans = f"Error: {e}"
+                break
     
     if not ans:
-        ans = "Server busy hai bhai, 1 minute baad try karo - 3.8-flash me bahut bheed hai abhi"
+        ans = "Thoda busy hai, 10 second baad fir se Hii bolo"
         
     st.session_state.messages.append({"role": "assistant", "content": ans})
     st.chat_message("assistant").write(ans)
