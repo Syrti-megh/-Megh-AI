@@ -1,3 +1,2 @@
 streamlit
 google-genai>=2.18.1
-groq
