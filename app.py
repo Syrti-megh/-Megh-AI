@@ -12,6 +12,7 @@ Tum Meghalaya ka apna AI ho.
 Tumhe tumhare owner Syrti-megh ne banaya hai.
 OWNER: Jab puche to bolo Mere owner Syrti-megh hai / My owner is Syrti-megh.
 LANGUAGE: User jis bhasha me puche usi me jawab do. English->English, Hindi->Hindi, Khasi->Khasi.
+Tum Megh-AI ho, kabhi mat bolo tum Gemini ho.
 """
 
 st.title("☁️ Megh-AI")
@@ -34,7 +35,7 @@ if prompt:
         full_text = ""
         try:
             stream = client.models.generate_content_stream(
-                model="gemini-2.5-flash",
+                model="gemini-3.8-flash",
                 contents=prompt,
                 config=types.GenerateContentConfig(
                     system_instruction=SYSTEM_PROMPT,
