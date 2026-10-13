@@ -1,7 +1,7 @@
 import streamlit as st
 from google import genai
 
-st.set_page_config(page_title="Megh-AI")
+st.set_page_config(page_title="Megh-AI", page_icon="☁️")
 API_KEY = st.secrets["GEMINI_API_KEY"].strip()
 client = genai.Client(api_key=API_KEY)
 
@@ -19,7 +19,7 @@ if prompt:
     st.session_state.messages.append({"role": "user", "content": prompt})
     st.chat_message("user").write(prompt)
     try:
-        response = client.models.generate_content(model="gemini-2.0-flash", contents=prompt)
+        response = client.models.generate_content(model="gemini-3.8-flash", contents=prompt)
         ans = response.text
     except Exception as e:
         ans = f"Error: {e}"
