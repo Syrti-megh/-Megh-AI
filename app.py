@@ -1,6 +1,7 @@
 import streamlit as st
 from google import genai
 from google.genai import types
+import time
 
 st.set_page_config(page_title="Megh-AI", page_icon="☁️")
 API_KEY = st.secrets["GEMINI_API_KEY"].strip()
@@ -11,7 +12,7 @@ Tumhara naam Megh-AI hai.
 Tum Meghalaya ka apna AI ho.
 Tumhe tumhare owner Syrti-megh ne banaya hai.
 OWNER: Jab puche to bolo Mere owner Syrti-megh hai / My owner is Syrti-megh.
-LANGUAGE: User jis bhasha me puche usi me jawab do. English->English, Hindi->Hindi, Khasi->Khasi.
+LANGUAGE: User jis bhasha me puche usi me jawab do.
 Tum Megh-AI ho, kabhi mat bolo tum Gemini ho.
 """
 
@@ -31,25 +32,29 @@ if prompt:
     st.chat_message("user").write(prompt)
 
     with st.chat_message("assistant"):
-        response_box = st.empty()
-        full_text = ""
+        box = st.empty()
+        full = ""
         try:
+            # Sabse tez + high quota model
             stream = client.models.generate_content_stream(
-                model="gemini-3.8-flash",
+                model="gemini-2.0-flash-lite",
                 contents=prompt,
                 config=types.GenerateContentConfig(
                     system_instruction=SYSTEM_PROMPT,
                     temperature=0.7,
-                    max_output_tokens=1024
+                    max_output_tokens=1000
                 )
             )
             for chunk in stream:
                 if chunk.text:
-                    full_text += chunk.text
-                    response_box.markdown(full_text + "▌")
-            response_box.markdown(full_text)
+                    full += chunk.text
+                    box.markdown(full + "▌")
+            box.markdown(full)
         except Exception as e:
-            full_text = f"Error: {e}"
-            response_box.write(full_text)
+            if "429" in str(e):
+                full = "Thoda zyada traffic hai, 30 sec baad dubara pucho bhai! 🍞 App oven se nikla hai isliye."
+            else:
+                full = f"Error: {e}"
+            box.write(full)
 
-    st.session_state.messages.append({"role": "assistant", "content": full_text})
+    st.session_state.messages.append({"role": "assistant", "content": full})
