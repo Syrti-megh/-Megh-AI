@@ -19,8 +19,8 @@ if prompt:
     st.session_state.messages.append({"role": "user", "content": prompt})
     st.chat_message("user").write(prompt)
     try:
-        full_prompt = "Tum Megh-AI ho, owner Syrti-megh hai. Owner puche to bolo Mere owner Syrti-megh hai, kabhi Google/Gemini mat bolo. Sawal: " + prompt
-        response = client.models.generate_content(model="gemini-2.5-flash", contents=full_prompt)
+        full_prompt = "Tum Megh-AI ho, Meghalaya ka apna AI. Tumhe Syrti-megh ne banaya hai. Tumhara owner Syrti-megh hai. Agar koi owner puche to bolo Mere owner Syrti-megh hai. Kabhi mat bolo tum Gemini ya Google ho. User ka sawal: " + prompt
+        response = client.models.generate_content(model="gemini-3.8-flash", contents=full_prompt)
         ans = response.text
     except Exception as e:
         ans = f"Error: {e}"
