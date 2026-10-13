@@ -1,35 +1,47 @@
 import streamlit as st
-from groq import Groq
+from google import genai
+from google.genai import types
 
 st.set_page_config(page_title="Megh-AI", page_icon="☁️")
-st.title("☁️ Megh-AI")
-st.caption("Meghalaya's Own AI - Built by Syrti-megh")
+API_KEY = st.secrets["GEMINI_API_KEY"].strip()
+client = genai.Client(api_key=API_KEY)
 
-client = Groq(api_key=st.secrets["GROQ_API_KEY"])
-MODEL = "llama-3.1-8b-instant"
+SYSTEM_PROMPT = """
+Tumhara naam Megh-AI hai, Meghalaya ka apna AI ho.
+Tumhe banaya Syrti-megh ne hai, lekin ye baat sirf tabhi batana jab user puche ki tumhe kisne banaya, tumhara owner kaun hai, ya tumhara creator kaun hai.
+Normal sawalo me (jaise Shillong kya hai) owner ka naam mat lo.
+Tum Megh-AI ho, kabhi mat bolo tum Gemini ho.
+User jis bhasha me puche usi me jawab do.
+"""
+
+st.title("☁️ Megh-AI")
+st.caption("Meghalaya's Own AI - Knowledge from the Clouds")
+st.divider()
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-SYSTEM = """You are Megh-AI, Meghalaya's own AI created by Syrti-megh.
-You know English, Hindi, Khasi.
-Rule: Only when user asks who made you, who is your owner, tell me about your owner, then say you were created by Syrti-megh.
-Otherwise give direct helpful answer.
-"""
-
 for m in st.session_state.messages:
-    with st.chat_message(m["role"]):
-        st.markdown(m["content"])
+    st.chat_message(m["role"]).write(m["content"])
 
-if prompt := st.chat_input("Ask anything..."):
-    st.session_state.messages.append({"role":"user","content":prompt})
-    with st.chat_message("user"):
-        st.markdown(prompt)
+prompt = st.chat_input("Ask anything...")
+if prompt:
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    st.chat_message("user").write(prompt)
 
     with st.chat_message("assistant"):
-        response = client.chat.completions.create(
-            model=MODEL,
-            messages=[{"role":"system","content":SYSTEM}] + st.session_state.messages
-        ).choices[0].message.content
-        st.markdown(response)
-        st.session_state.messages.append({"role":"assistant","content":response})
+        box = st.empty()
+        full = ""
+        try:
+            # Google ka latest model - 3.5-flash-lite
+            stream = client.models.generate_content_stream(
+                model="gemini-3.5-flash-lite",
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    system_instruction=SYSTEM_PROMPT,
+                    temperature=0.7
+                )
+            )
+            for chunk in stream:
+                if chunk.text:
+                    full += chunk.text
