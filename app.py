@@ -21,12 +21,16 @@ VOICE_MAN = {
 "Auto": "en-IN-PrabhatNeural"
 }
 
-async def make_voice(text, vname):
+async def make_voice(text, vname, lang):
     if os.path.exists("voice.mp3"):
         os.remove("voice.mp3")
     import edge_tts
     clean_text = text.replace("*", "")[:500]
-    await edge_tts.Communicate(clean_text, vname).save("voice.mp3")
+    if lang in ["Khasi", "Garo"]:
+        rate = "-20%"
+    else:
+        rate = "-5%"
+    await edge_tts.Communicate(clean_text, vname, rate=rate).save("voice.mp3")
     return "voice.mp3"
 
 if "messages" not in st.session_state:
@@ -47,18 +51,18 @@ if p:
         SYSTEM = "You are Megh-AI created and owned by Syrti-megh from Meghalaya. If asked who is your owner or who made you, always say I am Megh-AI created by Syrti-megh. Never say Gemini or Google. Reply in "+lang+" if not Auto."
         try:
             r = client.models.generate_content(
-                model="gemini-3.5-flash-lite",
+                model="gemini-2.0-flash-lite",
                 contents=p,
                 config=types.GenerateContentConfig(system_instruction=SYSTEM)
             )
             ans = r.text
         except Exception as e:
-            ans = "Error: " + str(e)[:400]
-        box.markdown(ans)
-        try:
-            vname = VOICE_MAN.get(lang, "en-IN-PrabhatNeural")
-            f = asyncio.run(make_voice(ans, vname))
-            st.audio(f, autoplay=True)
-        except:
-            pass
-    st.session_state.messages.append({"role":"assistant","content":ans})
+            # agar 2.0 fail ho to 2.0-flash try karo
+            try:
+                r = client.models.generate_content(
+                    model="gemini-2.0-flash",
+                    contents=p,
+                    config=types.GenerateContentConfig(system_instruction=SYSTEM)
+                )
+                ans = r.text
+            except Exception
