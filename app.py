@@ -3,6 +3,7 @@ from google import genai
 from google.genai import types
 import asyncio
 import os
+import time
 
 st.set_page_config(page_title="Megh-AI", page_icon=":cloud:")
 
@@ -41,6 +42,22 @@ for m in st.session_state.messages:
 lang = st.selectbox("Language:", ["Auto","English","Hindi","Khasi","Garo","Assamese"])
 p = st.chat_input("Ask anything in Garo or Khasi...")
 
+def get_ai_response(prompt_text, system_prompt):
+    models_to_try = ["gemini-3.8-flash", "gemini-2.0-flash", "gemini-1.5-flash"]
+    for model_name in models_to_try:
+        try:
+            r = client.models.generate_content(
+                model=model_name,
+                contents=prompt_text,
+                config=types.GenerateContentConfig(system_instruction=system_prompt)
+            )
+            if r.text:
+                return r.text
+        except Exception as e:
+            time.sleep(1)
+            continue
+    return "Mitela! 3.8 busy hai, 30 sec baad try karo! / Khublei!"
+
 if p:
     st.session_state.messages.append({"role":"user","content":p})
     st.chat_message("user").write(p)
@@ -48,15 +65,7 @@ if p:
         box = st.empty()
         box.markdown("Soch raha hu...")
         SYSTEM_PROMPT = f"You are Megh-AI, created by Syrti-megh from Meghalaya. You know Garo + Khasi. If asked who made you, say I am Megh-AI created by Syrti-megh. Never say Gemini or Google. Garo: Nameng=Hello. Khasi: Khublei. Reply in {lang}."
-        try:
-            r = client.models.generate_content(
-                model="gemini-3.8-flash",
-                contents=p,
-                config=types.GenerateContentConfig(system_instruction=SYSTEM_PROMPT)
-            )
-            ans = r.text
-        except Exception as e:
-            ans = f"Error: {str(e)[:400]}"
+        ans = get_ai_response(p, SYSTEM_PROMPT)
         box.markdown(ans)
         try:
             vname = VOICE_MAN.get(lang, "en-IN-PrabhatNeural")
