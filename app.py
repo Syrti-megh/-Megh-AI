@@ -27,8 +27,7 @@ async def make_voice(text, vname, lang):
     import edge_tts
     clean_text = text.replace("*", "")[:400]
     rate = "-25%" if lang in ["Khasi","Garo"] else "-5%"
-    comm = edge_tts.Communicate(clean_text, vname, rate=rate)
-    await comm.save("voice.mp3")
+    await edge_tts.Communicate(clean_text, vname, rate=rate).save("voice.mp3")
     return "voice.mp3"
 
 if "messages" not in st.session_state:
@@ -36,49 +35,38 @@ if "messages" not in st.session_state:
 
 lang = st.selectbox("Language", ["Auto","English","Hindi","Khasi","Garo","Assamese"])
 
-# --- CHAT HISTORY MIDDLE ME ---
+# History beech me
 chat_box = st.container()
 with chat_box:
     for m in st.session_state.messages:
         with st.chat_message(m["role"]):
             st.write(m["content"])
 
-# --- CHAT INPUT NICHE ---
+# Input niche
 p = st.chat_input("Ask anything about Meghalaya...")
 
 if p:
     st.session_state.messages.append({"role":"user","content":p})
-    with chat_box:
-        st.chat_message("user").write(p)
+    st.chat_message("user").write(p)
 
-    with chat_box:
-        with st.chat_message("assistant"):
-            box = st.empty()
-            box.markdown("Soch raha hu...")
+    with st.chat_message("assistant"):
+        SYSTEM = f"You are Megh-AI, Meghalaya's Own AI. Never say Gemini/Google. You know Meghalaya: Khasi, Garo, Jaintia hills, Shillong, Cherrapunji, Dawki, Living Root Bridge, Wangala, Jadoh. Reply in {lang}"
 
-            SYSTEM = f"""
-            You are Megh-AI, Meghalaya's Own AI.
-            Never say you are Gemini or Google.
-            You have deep knowledge of Meghalaya: Khasi, Garo, Jaintia hills, Shillong, Sohra (Cherrapunji), Dawki, Living Root Bridges, Nohkalikai, Mawlynnong, Wangala, Shad Suk Mynsiem, Behdienkhlam, Jadoh, Dohneiiong, Tungrymbai.
-            If asked who you are, say: I am Megh-AI, Meghalaya's Own AI.
-            Reply in {lang} if not Auto.
-            """
+        # MODEL 3.5 - ONLY ONE MODEL AS YOU SAID
+        r = client.models.generate_content(
+            model="gemini-3.5-flash",
+            contents=p,
+            config=types.GenerateContentConfig(system_instruction=SYSTEM)
+        )
+        ans = r.text
+        st.write(ans)
 
-            # ONLY ONE MODEL - 3.5 wala
-            r = client.models.generate_content(
-                model="gemini-1.5-flash",
-                contents=p,
-                config=types.GenerateContentConfig(system_instruction=SYSTEM)
-            )
-            ans = r.text
-            box.markdown(ans)
-
-            try:
-                vname = VOICE_MAN.get(lang, "en-IN-PrabhatNeural")
-                f = asyncio.run(make_voice(ans, vname, lang))
-                st.audio(f, autoplay=True)
-            except:
-                pass
+        try:
+            vname = VOICE_MAN.get(lang, "en-IN-PrabhatNeural")
+            f = asyncio.run(make_voice(ans, vname, lang))
+            st.audio(f, autoplay=True)
+        except:
+            pass
 
     st.session_state.messages.append({"role":"assistant","content":ans})
     st.rerun()
