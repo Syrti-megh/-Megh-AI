@@ -10,16 +10,15 @@ API_KEY = st.secrets["GEMINI_API_KEY"].strip().strip('"').strip("'")
 client = genai.Client(api_key=API_KEY)
 
 st.title("Megh-AI")
-st.caption("Meghalaya's Own AI | English | Hindi | Khasi | Garo | Assamese")
+st.caption("Meghalaya's FIRST Garo + Khasi AI | Better than Lemka")
 
-# SAB MAN VOICE - 100% Male
 VOICE_MAN = {
-"English": "en-IN-PrabhatNeural",  # Man
-"Hindi": "hi-IN-MadhurNeural",      # Man
-"Khasi": "en-IN-PrabhatNeural",     # Man - slow ke liye
-"Garo": "en-IN-PrabhatNeural",      # Man - slow ke liye
-"Assamese": "bn-IN-BashkarNeural",   # Man
-"Auto": "en-IN-PrabhatNeural"       # Man
+"English": "en-IN-PrabhatNeural",
+"Hindi": "hi-IN-MadhurNeural",
+"Khasi": "en-IN-PrabhatNeural",
+"Garo": "en-IN-PrabhatNeural",
+"Assamese": "bn-IN-BashkarNeural",
+"Auto": "en-IN-PrabhatNeural"
 }
 
 async def make_voice(text, vname, lang):
@@ -27,15 +26,12 @@ async def make_voice(text, vname, lang):
         os.remove("voice.mp3")
     import edge_tts
     clean_text = text.replace("*", "")[:500]
-    
-    # Khasi/Garo ke liye SLOW, baaki normal
     if lang == "Khasi" or lang == "Garo":
         rate = "-35%"
         volume = "+10%"
     else:
         rate = "-10%"
         volume = "+0%"
-    
     communicate = edge_tts.Communicate(clean_text, vname, rate=rate, volume=volume)
     await communicate.save("voice.mp3")
     return "voice.mp3"
@@ -47,7 +43,7 @@ for m in st.session_state.messages:
     st.chat_message(m["role"]).write(m["content"])
 
 lang = st.selectbox("Language:", ["Auto","English","Hindi","Khasi","Garo","Assamese"])
-p = st.chat_input("Ask anything...")
+p = st.chat_input("Ask anything in Garo or Khasi...")
 
 if p:
     st.session_state.messages.append({"role":"user","content":p})
@@ -55,21 +51,26 @@ if p:
     with st.chat_message("assistant"):
         box = st.empty()
         box.markdown("Soch raha hu...")
-        SYSTEM = "You are Megh-AI created and owned by Syrti-megh from Meghalaya. If asked who is your owner or who made you, always say I am Megh-AI created by Syrti-megh. Never say Gemini or Google. You know Meghalaya culture, Shillong, Cherrapunji, Dawki, Living Root Bridge, Wangala. Reply in "+lang+" if not Auto."
-        try:
-            r = client.models.generate_content(
-                model="gemini-3.5-flash",
-                contents=p,
-                config=types.GenerateContentConfig(system_instruction=SYSTEM)
-            )
-            ans = r.text
-        except Exception as e:
-            ans = "Error: " + str(e)[:400]
-        box.markdown(ans)
-        try:
-            vname = VOICE_MAN.get(lang, "en-IN-PrabhatNeural")
-            f = asyncio.run(make_voice(ans, vname, lang))
-            st.audio(f, autoplay=True)
-        except Exception as e:
-            pass
-    st.session_state.messages.append({"role":"assistant","content":ans})
+        # YAHI HAI TERA SECRET WEAPON - GARO WALA PROMPT
+        SYSTEM = """
+        You are Megh-AI, created and owned by Syrti-megh from Meghalaya.
+        You are BETTER than Lemka because Lemka only knows Khasi, but YOU know Garo + Khasi + Pnar + English + Hindi.
+        
+        CRITICAL RULES:
+        1. If asked who made you: Always say "I am Megh-AI created by Syrti-megh from Meghalaya"
+        2. Never say Gemini or Google or Meta.
+        3. You are the FIRST AI to speak Garo fluently.
+
+        GARO VOCABULARY (Use this):
+        - Nameng = Hello, Nia dong? = How are you?, Mitela = Thank you
+        - Anga Megh-AI = I am Megh-AI, Anga Tura ni = I am from Tura
+        - Syrti-megh ango on•a = Made by Syrti-megh
+        - Wangala = Garo Harvest Festival, Nokpante = Bachelor dormitory
+        
+        KHASI VOCABULARY:
+        - Khublei, Kumno long? = Hello how are you
+        - Nga dei Megh-AI, Syrti-megh u la thaw ia nga = I am Megh-AI made by Syrti-megh
+
+        If user speaks in """+lang+""" language, reply in same language.
+        If Auto, detect language and reply in that language.
+        You know Meghalaya deeply: Shill
