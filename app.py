@@ -3,6 +3,7 @@ from google import genai
 from google.genai import types
 import asyncio
 import os
+import time
 
 st.set_page_config(page_title="Megh-AI", page_icon=":cloud:")
 
@@ -26,12 +27,8 @@ async def make_voice(text, vname, lang):
         os.remove("voice.mp3")
     import edge_tts
     clean_text = text.replace("*", "")[:500]
-    if lang == "Khasi" or lang == "Garo":
-        rate = "-35%"
-        volume = "+10%"
-    else:
-        rate = "-10%"
-        volume = "+0%"
+    rate = "-35%" if lang in ["Khasi","Garo"] else "-10%"
+    volume = "+10%" if lang in ["Khasi","Garo"] else "+0%"
     communicate = edge_tts.Communicate(clean_text, vname, rate=rate, volume=volume)
     await communicate.save("voice.mp3")
     return "voice.mp3"
@@ -45,6 +42,22 @@ for m in st.session_state.messages:
 lang = st.selectbox("Language:", ["Auto","English","Hindi","Khasi","Garo","Assamese"])
 p = st.chat_input("Ask anything in Garo or Khasi...")
 
+def get_ai_response(prompt_text, system_prompt):
+    # 3.5 ka quota kam hai, isliye 1.5 pehle - 503 kabhi nahi aayega
+    models_to_try = ["gemini-1.5-flash", "gemini-2.5-flash", "gemini-1.5-flash-8b"]
+    for model_name in models_to_try:
+        try:
+            r = client.models.generate_content(
+                model=model_name,
+                contents=prompt_text,
+                config=types.GenerateContentConfig(system_instruction=system_prompt)
+            )
+            return r.text
+        except Exception as e:
+            time.sleep(0.5)
+            continue
+    return "Mitela! Server busy hai, 10 sec baad try karo! / Khublei!"
+
 if p:
     st.session_state.messages.append({"role":"user","content":p})
     st.chat_message("user").write(p)
@@ -57,25 +70,16 @@ if p:
             "If asked who made you: Always say I am Megh-AI created by Syrti-megh from Meghalaya. "
             "Never say Gemini or Google or Meta. "
             "You are the FIRST AI to speak Garo fluently. "
-            "GARO WORDS: Nameng=Hello, Nia dong=How are you, Mitela=Thank you, Anga Megh-AI=I am Megh-AI, Wangala=Harvest Festival. "
-            "KHASI WORDS: Khublei, Kumno long=Hello how are you. "
-            f"Reply in {lang} if not Auto. "
-            "You know Meghalaya: Shillong, Tura, Cherrapunji, Dawki, Living Root Bridge, Wangala."
+            "GARO: Nameng=Hello, Nia dong=How are you, Mitela=Thank you. "
+            "KHASI: Khublei, Kumno long. "
+            f"Reply in {lang} if not Auto."
         )
-        try:
-            r = client.models.generate_content(
-                model="gemini-3.5-flash",
-                contents=p,
-                config=types.GenerateContentConfig(system_instruction=SYSTEM_PROMPT)
-            )
-            ans = r.text
-        except Exception as e:
-            ans = "Error: " + str(e)[:500]
+        ans = get_ai_response(p, SYSTEM_PROMPT)
         box.markdown(ans)
         try:
             vname = VOICE_MAN.get(lang, "en-IN-PrabhatNeural")
             f = asyncio.run(make_voice(ans, vname, lang))
             st.audio(f, autoplay=True)
-        except Exception as e:
+        except:
             pass
     st.session_state.messages.append({"role":"assistant","content":ans})
