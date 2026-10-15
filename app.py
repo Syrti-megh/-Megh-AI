@@ -43,8 +43,7 @@ lang = st.selectbox("Language:", ["Auto","English","Hindi","Khasi","Garo","Assam
 p = st.chat_input("Ask anything in Garo or Khasi...")
 
 def get_ai_response(prompt_text, system_prompt):
-    # 3.5 ka quota kam hai, isliye 1.5 pehle - 503 kabhi nahi aayega
-    models_to_try = ["gemini-1.5-flash", "gemini-2.5-flash", "gemini-1.5-flash-8b"]
+    models_to_try = ["gemini-3.8-flash", "gemini-2.5-flash", "gemini-1.5-flash"]
     for model_name in models_to_try:
         try:
             r = client.models.generate_content(
