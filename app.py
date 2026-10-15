@@ -1,9 +1,7 @@
 import streamlit as st
 from google import genai
 from google.genai import types
-import asyncio
-import os
-import time
+import asyncio, os, time
 
 st.set_page_config(page_title="Megh-AI", page_icon=":cloud:")
 
@@ -14,28 +12,22 @@ st.title("Megh-AI")
 st.caption("Meghalaya's FIRST Garo + Khasi AI | Better than Lemka")
 
 VOICE_MAN = {
-"English": "en-IN-PrabhatNeural",
-"Hindi": "hi-IN-MadhurNeural",
-"Khasi": "en-IN-PrabhatNeural",
-"Garo": "en-IN-PrabhatNeural",
-"Assamese": "bn-IN-BashkarNeural",
-"Auto": "en-IN-PrabhatNeural"
+"English": "en-IN-PrabhatNeural", "Hindi": "hi-IN-MadhurNeural",
+"Khasi": "en-IN-PrabhatNeural", "Garo": "en-IN-PrabhatNeural",
+"Assamese": "bn-IN-BashkarNeural", "Auto": "en-IN-PrabhatNeural"
 }
 
 async def make_voice(text, vname, lang):
-    if os.path.exists("voice.mp3"):
-        os.remove("voice.mp3")
+    if os.path.exists("voice.mp3"): os.remove("voice.mp3")
     import edge_tts
     clean_text = text.replace("*", "")[:500]
     rate = "-35%" if lang in ["Khasi","Garo"] else "-10%"
-    volume = "+10%" if lang in ["Khasi","Garo"] else "+0%"
-    communicate = edge_tts.Communicate(clean_text, vname, rate=rate, volume=volume)
+    communicate = edge_tts.Communicate(clean_text, vname, rate=rate)
     await communicate.save("voice.mp3")
     return "voice.mp3"
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
-
 for m in st.session_state.messages:
     st.chat_message(m["role"]).write(m["content"])
 
@@ -43,20 +35,28 @@ lang = st.selectbox("Language:", ["Auto","English","Hindi","Khasi","Garo","Assam
 p = st.chat_input("Ask anything in Garo or Khasi...")
 
 def get_ai_response(prompt_text, system_prompt):
-    models_to_try = ["gemini-3.8-flash", "gemini-2.0-flash", "gemini-1.5-flash"]
-    for model_name in models_to_try:
+    # Sahi order: 3.8 Flash -> 3.5 Flash-lite -> 3.8 Flash (retry)
+    models_to_try = ["gemini-3.8-flash", "gemini-3.5-flash-lite", "gemini-3.8-flash"]
+    for attempt in range(3):
+        model_name = models_to_try[attempt % len(models_to_try)]
         try:
             r = client.models.generate_content(
                 model=model_name,
                 contents=prompt_text,
-                config=types.GenerateContentConfig(system_instruction=system_prompt)
+                config=types.GenerateContentConfig(
+                    system_instruction=system_prompt,
+                    thinking_config=types.ThinkingConfig(thinking_level="low")
+                )
             )
-            if r.text:
-                return r.text
+            if r.text: return r.text
         except Exception as e:
+            # 503 hai toh 2 sec ruk ke retry
+            if "503" in str(e) or "high demand" in str(e).lower():
+                time.sleep(2 * (attempt + 1))
+                continue
             time.sleep(1)
             continue
-    return "Mitela! 3.8 busy hai, 30 sec baad try karo! / Khublei!"
+    return "Mitela! Google ka 3.8 server abhi full busy hai. 1 min ruk ke fir se Hii likh de! / Khublei! 503 high demand hai."
 
 if p:
     st.session_state.messages.append({"role":"user","content":p})
@@ -71,6 +71,5 @@ if p:
             vname = VOICE_MAN.get(lang, "en-IN-PrabhatNeural")
             f = asyncio.run(make_voice(ans, vname, lang))
             st.audio(f, autoplay=True)
-        except:
-            pass
+        except: pass
     st.session_state.messages.append({"role":"assistant","content":ans})
