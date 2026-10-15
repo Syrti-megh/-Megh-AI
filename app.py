@@ -47,13 +47,13 @@ if p:
         SYSTEM = "You are Megh-AI created and owned by Syrti-megh from Meghalaya. If asked who is your owner or who made you, always say I am Megh-AI created by Syrti-megh. Never say Gemini or Google. Reply in "+lang+" if not Auto."
         try:
             r = client.models.generate_content(
-                model="gemini-2.0-flash-lite",
+                model="gemini-3.5-flash-lite",
                 contents=p,
                 config=types.GenerateContentConfig(system_instruction=SYSTEM)
             )
             ans = r.text
         except Exception as e:
-            ans = "Error: " + str(e)[:300]
+            ans = "Error: " + str(e)[:400]
         box.markdown(ans)
         try:
             vname = VOICE_MAN.get(lang, "en-IN-PrabhatNeural")
