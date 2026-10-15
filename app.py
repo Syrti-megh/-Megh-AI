@@ -3,7 +3,6 @@ from google import genai
 from google.genai import types
 import asyncio
 import os
-import time
 
 st.set_page_config(page_title="Megh-AI", page_icon=":cloud:")
 
@@ -42,21 +41,6 @@ for m in st.session_state.messages:
 lang = st.selectbox("Language:", ["Auto","English","Hindi","Khasi","Garo","Assamese"])
 p = st.chat_input("Ask anything in Garo or Khasi...")
 
-def get_ai_response(prompt_text, system_prompt):
-    models_to_try = ["gemini-3.8-flash", "gemini-2.5-flash", "gemini-1.5-flash"]
-    for model_name in models_to_try:
-        try:
-            r = client.models.generate_content(
-                model=model_name,
-                contents=prompt_text,
-                config=types.GenerateContentConfig(system_instruction=system_prompt)
-            )
-            return r.text
-        except Exception as e:
-            time.sleep(0.5)
-            continue
-    return "Mitela! Server busy hai, 10 sec baad try karo! / Khublei!"
-
 if p:
     st.session_state.messages.append({"role":"user","content":p})
     st.chat_message("user").write(p)
@@ -72,13 +56,3 @@ if p:
             "GARO: Nameng=Hello, Nia dong=How are you, Mitela=Thank you. "
             "KHASI: Khublei, Kumno long. "
             f"Reply in {lang} if not Auto."
-        )
-        ans = get_ai_response(p, SYSTEM_PROMPT)
-        box.markdown(ans)
-        try:
-            vname = VOICE_MAN.get(lang, "en-IN-PrabhatNeural")
-            f = asyncio.run(make_voice(ans, vname, lang))
-            st.audio(f, autoplay=True)
-        except:
-            pass
-    st.session_state.messages.append({"role":"assistant","content":ans})
