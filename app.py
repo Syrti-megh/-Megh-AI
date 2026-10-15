@@ -1,67 +1,43 @@
 import streamlit as st
 from google import genai
 from google.genai import types
-import os
-import asyncio
+import os, asyncio
 import edge_tts
 
 st.set_page_config(page_title="Megh-AI", page_icon="☁️")
+client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"].strip())
 
-API_KEY = st.secrets["GEMINI_API_KEY"].strip()
-client = genai.Client(api_key=API_KEY)
-
-SYSTEM_PROMPT = """
-Tumhara naam Megh-AI hai, Meghalaya ka apna AI ho.
-Tumhe banaya Syrti-megh ne hai.
-Tum Megh-AI ho, kabhi mat bolo tum Gemini ho.
-Jawab chota aur saaf rakho.
-"""
+SYSTEM_PROMPT = "Tumhara naam Megh-AI hai, Meghalaya ka apna AI ho. Banaya Syrti-megh ne. Tum Megh-AI ho, Gemini mat bolna."
 
 st.title("☁️ Megh-AI")
-st.caption("Model: gemini-3.8-flash")
+st.caption("Meghalaya's Own AI 🇮🇳 | Made with ❤️ in Meghalaya")
 
-# Ladka Clear Vocal
 voice = "hi-IN-MadhurNeural"
-
 async def make_voice(text):
-    if os.path.exists("voice.mp3"):
-        os.remove("voice.mp3")
-    clean = text.replace("*","").replace("#","")[:400]
-    comm = edge_tts.Communicate(clean, voice)
-    await comm.save("voice.mp3")
-    return "voice.mp3"
+    if os.path.exists("v.mp3"): os.remove("v.mp3")
+    comm = edge_tts.Communicate(text[:400], voice)
+    await comm.save("v.mp3")
+    return "v.mp3"
+def speak(t):
+    f = asyncio.run(make_voice(t))
+    st.audio(f, autoplay=True)
 
-def speak(text):
-    file = asyncio.run(make_voice(text))
-    if os.path.exists(file):
-        st.audio(file, autoplay=True)
+if "messages" not in st.session_state: st.session_state.messages = []
+for m in st.session_state.messages: st.chat_message(m["role"]).write(m["content"])
 
-if "messages" not in st.session_state:
-    st.session_state.messages = []
-
-for m in st.session_state.messages:
-    st.chat_message(m["role"]).write(m["content"])
-
-prompt = st.chat_input("Ask anything...")
-if prompt:
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    st.chat_message("user").write(prompt)
-
+p = st.chat_input("Ask anything...")
+if p:
+    st.session_state.messages.append({"role":"user","content":p})
+    st.chat_message("user").write(p)
     with st.chat_message("assistant"):
+        box = st.empty()
+        box.markdown("Soch raha hu... ⏳")
         try:
-            # SIRF 3.8 FLASH
-            response = client.models.generate_content(
-                model="gemini-3.8-flash",
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    system_instruction=SYSTEM_PROMPT
-                )
-            )
-            st.write(response.text)
-            speak(response.text)
-            ans = response.text
-        except Exception as e:
-            ans = f"Error: {e}"
-            st.write(ans)
-
-    st.session_state.messages.append({"role": "assistant", "content": ans})
+            r = client.models.generate_content(model="gemini-3.8-flash", contents=p, config=types.GenerateContentConfig(system_instruction=SYSTEM_PROMPT))
+            ans = r.text
+        except:
+            r = client.models.generate_content(model="gemini-2.0-flash-lite", contents=p, config=types.GenerateContentConfig(system_instruction=SYSTEM_PROMPT))
+            ans = r.text
+        box.markdown(ans)
+        speak(ans)
+    st.session_state.messages.append({"role":"assistant","content":ans})
