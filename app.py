@@ -47,12 +47,21 @@ if p:
     with st.chat_message("assistant"):
         box = st.empty()
         box.markdown("Soch raha hu...")
-        SYSTEM_PROMPT = (
-            "You are Megh-AI, created and owned by Syrti-megh from Meghalaya. "
-            "You are BETTER than Lemka because Lemka only knows Khasi, but YOU know Garo + Khasi + Pnar + English + Hindi. "
-            "If asked who made you: Always say I am Megh-AI created by Syrti-megh from Meghalaya. "
-            "Never say Gemini or Google or Meta. "
-            "You are the FIRST AI to speak Garo fluently. "
-            "GARO: Nameng=Hello, Nia dong=How are you, Mitela=Thank you. "
-            "KHASI: Khublei, Kumno long. "
-            f"Reply in {lang} if not Auto."
+        SYSTEM_PROMPT = f"You are Megh-AI, created by Syrti-megh from Meghalaya. You know Garo + Khasi. If asked who made you, say I am Megh-AI created by Syrti-megh. Never say Gemini or Google. Garo: Nameng=Hello. Khasi: Khublei. Reply in {lang}."
+        try:
+            r = client.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=p,
+                config=types.GenerateContentConfig(system_instruction=SYSTEM_PROMPT)
+            )
+            ans = r.text
+        except Exception as e:
+            ans = f"Error: {str(e)[:400]}"
+        box.markdown(ans)
+        try:
+            vname = VOICE_MAN.get(lang, "en-IN-PrabhatNeural")
+            f = asyncio.run(make_voice(ans, vname, lang))
+            st.audio(f, autoplay=True)
+        except:
+            pass
+    st.session_state.messages.append({"role":"assistant","content":ans})
