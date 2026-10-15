@@ -9,7 +9,7 @@ API_KEY = st.secrets["GEMINI_API_KEY"].strip().strip('"').strip("'")
 client = genai.Client(api_key=API_KEY)
 
 st.title("Megh-AI")
-st.caption("Meghalaya's FIRST 5 Language AI | Better than Lemka")
+st.caption("Meghalaya's FIRST 5 Language AI | Bolke bhi sunata hai!")
 
 VOICE_MAN = {
     "English": "en-US-GuyNeural",
@@ -21,17 +21,23 @@ VOICE_MAN = {
     "Auto": "en-US-GuyNeural"
 }
 
+# AI BOLEGA - VOICE FUNCTION
 async def make_voice(text, vname, lang):
-    if os.path.exists("voice.mp3"):
-        os.remove("voice.mp3")
-    import edge_tts
-    clean_text = text.replace("*", "").replace("'", " ").replace("!", ".").replace("#", "")[:400]
-    rate = "-25%" if lang in ["Khasi", "Garo", "Kokborok"] else "-10%"
-    volume = "+25%"
-    pitch = "+4Hz"
-    communicate = edge_tts.Communicate(clean_text, vname, rate=rate, volume=volume, pitch=pitch)
-    await communicate.save("voice.mp3")
-    return "voice.mp3"
+    try:
+        if os.path.exists("voice.mp3"):
+            os.remove("voice.mp3")
+        import edge_tts
+        # Clean text for voice
+        clean_text = text.replace("*", "").replace("'", " ").replace("!", ".").replace("#", "").replace("_", "")[:450]
+        rate = "-20%" if lang in ["Khasi", "Garo", "Kokborok"] else "-10%"
+        volume = "+20%"
+        pitch = "+2Hz"
+        communicate = edge_tts.Communicate(clean_text, vname, rate=rate, volume=volume, pitch=pitch)
+        await communicate.save("voice.mp3")
+        return "voice.mp3"
+    except Exception as e:
+        print(f"Voice error: {e}")
+        return None
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -63,7 +69,6 @@ if audio_input:
         with st.spinner("Samajh raha hu... Roman me likh raha hu..."):
             try:
                 uploaded = client.files.upload(file=f_path)
-                # LATEST 2026 MODEL - FIXED FOR 404
                 models_voice = ["gemini-3.8-flash", "gemini-3.5-flash", "gemini-3.5-flash-lite"]
                 for m_name in models_voice:
                     try:
@@ -92,7 +97,6 @@ if p:
     user_prompt = p
 
 def get_ai_response(prompt_text, system_prompt):
-    # LATEST MODELS - NO 404
     models_to_try = ["gemini-3.8-flash", "gemini-3.5-flash", "gemini-3.5-flash-lite", "gemini-3.6-flash"]
     for model_name in models_to_try:
         try:
@@ -104,7 +108,7 @@ def get_ai_response(prompt_text, system_prompt):
                 )
             )
             if r.text: return r.text
-        except Exception as e:
+        except:
             time.sleep(1)
             continue
     return "Mitela! Server busy hai, 1 min baad try kar!"
@@ -114,20 +118,28 @@ if user_prompt:
     st.chat_message("user").write(user_prompt)
     with st.chat_message("assistant"):
         box = st.empty()
-        box.markdown("Soch raha hu...")
+        box.markdown("Soch raha hu... 🗣️")
         SYSTEM_PROMPT = f"""You are Megh-AI, created by Syrti-megh from Meghalaya. You know 5 languages: Garo, Khasi, Kokborok, Hindi, English.
         CRITICAL RULES:
         1. ALWAYS reply in ROMAN ENGLISH ONLY. Only A-Z letters. NEVER Devanagari.
         2. Hindi in Roman: 'Namaste kaise ho' NOT 'नमस्ते'.
         3. Reply language is {lang} but script ALWAYS Roman.
         4. Say I am Megh-AI created by Syrti-megh. Never say Gemini/Google.
-        Keep short."""
+        Keep short and clear for voice."""
         ans = get_ai_response(user_prompt, SYSTEM_PROMPT)
         box.markdown(ans)
+        
+        # AI BOLEGA - YAHAN VOICE AYEGA
         try:
             vname = VOICE_MAN.get(lang, "en-US-GuyNeural")
-            f = asyncio.run(make_voice(ans, vname, lang))
-            st.audio(f, autoplay=True)
-        except: pass
+            voice_file = asyncio.run(make_voice(ans, vname, lang))
+            if voice_file and os.path.exists(voice_file):
+                st.success("🔊 AI bol raha hai...")
+                st.audio(voice_file, autoplay=True)
+            else:
+                st.warning("Voice file nahi bana")
+        except Exception as e:
+            st.error(f"Voice Error: {e}")
+            
     st.session_state.messages.append({"role":"assistant","content":ans})
     st.rerun()
