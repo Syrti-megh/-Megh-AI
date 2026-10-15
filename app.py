@@ -20,20 +20,19 @@ Jawab chota aur saaf rakho, 4-5 line me.
 """
 
 st.title("☁️ Megh-AI")
-st.caption("Meghalaya's Own AI - Knowledge from the Clouds | 5 Voice CLEAR")
+st.caption("Meghalaya's Own AI - Boy Voice | Clear Vocal")
 
-# --- CLEAR VOICE SETTING ---
-st.sidebar.title("🔊 Clear Voice Setting")
+st.sidebar.title("🔊 Voice Setting")
 voice_lang = st.sidebar.selectbox("Voice Language:", 
     ["Hindi", "English", "Khasi", "Garo", "Assamese"])
 
-# Microsoft ki sabse clear voice
+# LADKA CLEAR VOCAL VOICE
 voice_map = {
-    "Hindi": "hi-IN-SwaraNeural",      # Ekdum clear Hindi
-    "English": "en-IN-NeerjaNeural",   # Indian English
-    "Assamese": "en-IN-NeerjaNeural",  # Assamese clear
-    "Khasi": "en-IN-NeerjaNeural",     # Khasi/Garo English accent me saaf
-    "Garo": "en-IN-NeerjaNeural"
+    "Hindi": "hi-IN-MadhurNeural",
+    "English": "en-IN-PrabhatNeural",
+    "Assamese": "hi-IN-MadhurNeural",
+    "Khasi": "en-IN-PrabhatNeural",
+    "Garo": "en-IN-PrabhatNeural"
 }
 
 async def generate_voice(text, lang):
@@ -41,7 +40,7 @@ async def generate_voice(text, lang):
         if os.path.exists("megh_voice.mp3"):
             os.remove("megh_voice.mp3")
         clean_text = text.replace("*","").replace("#","").replace("_","")[:500]
-        voice = voice_map.get(lang, "hi-IN-SwaraNeural")
+        voice = voice_map.get(lang, "hi-IN-MadhurNeural")
         communicate = edge_tts.Communicate(clean_text, voice)
         await communicate.save("megh_voice.mp3")
         return "megh_voice.mp3"
@@ -85,11 +84,8 @@ if prompt:
                     box.markdown(full + "▌")
             box.markdown(full)
             
-            # Suno Button + Auto Speak
             if st.button("🔊 Suno", key=f"play_{len(st.session_state.messages)}"):
                 speak(full)
-            
-            # Auto bolo
             speak(full)
             
         except Exception as e:
