@@ -23,10 +23,9 @@ st.title("☁️ Megh-AI")
 st.caption("Meghalaya's Own AI - Boy Voice | Clear Vocal")
 
 st.sidebar.title("🔊 Voice Setting")
-voice_lang = st.sidebar.selectbox("Voice Language:", 
+voice_lang = st.sidebar.selectbox("Voice Language:",
     ["Hindi", "English", "Khasi", "Garo", "Assamese"])
 
-# LADKA CLEAR VOCAL VOICE
 voice_map = {
     "Hindi": "hi-IN-MadhurNeural",
     "English": "en-IN-PrabhatNeural",
@@ -71,7 +70,7 @@ if prompt:
         full = ""
         try:
             stream = client.models.generate_content_stream(
-                model="gemini-2.0-flash",
+                model="gemini-2.5-flash",
                 contents=prompt,
                 config=types.GenerateContentConfig(
                     system_instruction=SYSTEM_PROMPT,
@@ -83,16 +82,10 @@ if prompt:
                     full += chunk.text
                     box.markdown(full + "▌")
             box.markdown(full)
-            
-            if st.button("🔊 Suno", key=f"play_{len(st.session_state.messages)}"):
-                speak(full)
             speak(full)
-            
+
         except Exception as e:
-            if "429" in str(e):
-                full = "Bhai thoda ruk jao, 30 sec me quota reset hoga!"
-            else:
-                full = f"Error: {e}"
+            full = f"Error: {e}"
             box.write(full)
 
     st.session_state.messages.append({"role": "assistant", "content": full})
