@@ -63,12 +63,21 @@ if audio_input:
         with st.spinner("Samajh raha hu... Roman me likh raha hu..."):
             try:
                 uploaded = client.files.upload(file=f_path)
-                # 3.5 MODEL - NO 429 ERROR
-                r = client.models.generate_content(
-                    model="gemini-3.5-flash",
-                    contents=[f"Transcribe this audio in ROMAN ENGLISH ONLY. Use only A-Z English letters. NEVER use Devanagari/Hindi/Bengali script. Language is {lang}:", uploaded]
-                )
-                user_prompt = r.text
+                # FIXED: Voice ke liye 1.5-flash - 1500 quota + Audio best
+                try:
+                    r = client.models.generate_content(
+                        model="gemini-1.5-flash",
+                        contents=[f"Transcribe this audio in ROMAN ENGLISH ONLY. Use only A-Z English letters. NEVER use Devanagari/Hindi/Bengali script. Language is {lang}:", uploaded]
+                    )
+                    user_prompt = r.text
+                except:
+                    # Backup model
+                    r = client.models.generate_content(
+                        model="gemini-2.0-flash",
+                        contents=[f"Transcribe this audio in ROMAN ENGLISH ONLY. Use only A-Z English letters:", uploaded]
+                    )
+                    user_prompt = r.text
+                
                 st.success(f"Samjha: {user_prompt}")
                 os.remove(f_path)
                 st.session_state["temp_prompt"] = user_prompt
@@ -85,8 +94,8 @@ if p:
     user_prompt = p
 
 def get_ai_response(prompt_text, system_prompt):
-    # PURE 3.5 MODELS - ZYADA QUOTA
-    models_to_try = ["gemini-3.5-flash", "gemini-3.5-flash-lite", "gemini-2.5-flash"]
+    # FIXED: High quota models - No more 429
+    models_to_try = ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-2.5-flash-lite", "gemini-2.0-flash-lite"]
     for model_name in models_to_try:
         try:
             r = client.models.generate_content(
