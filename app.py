@@ -63,21 +63,19 @@ if audio_input:
         with st.spinner("Samajh raha hu... Roman me likh raha hu..."):
             try:
                 uploaded = client.files.upload(file=f_path)
-                # FIXED: Voice ke liye 1.5-flash - 1500 quota + Audio best
-                try:
-                    r = client.models.generate_content(
-                        model="gemini-1.5-flash",
-                        contents=[f"Transcribe this audio in ROMAN ENGLISH ONLY. Use only A-Z English letters. NEVER use Devanagari/Hindi/Bengali script. Language is {lang}:", uploaded]
-                    )
-                    user_prompt = r.text
-                except:
-                    # Backup model
-                    r = client.models.generate_content(
-                        model="gemini-2.0-flash",
-                        contents=[f"Transcribe this audio in ROMAN ENGLISH ONLY. Use only A-Z English letters:", uploaded]
-                    )
-                    user_prompt = r.text
-                
+                # LATEST 2026 MODEL - FIXED FOR 404
+                models_voice = ["gemini-3.8-flash", "gemini-3.5-flash", "gemini-3.5-flash-lite"]
+                for m_name in models_voice:
+                    try:
+                        r = client.models.generate_content(
+                            model=m_name,
+                            contents=[f"Transcribe this audio in ROMAN ENGLISH ONLY. Only A-Z letters. NEVER Devanagari. Language is {lang}:", uploaded]
+                        )
+                        if r.text:
+                            user_prompt = r.text
+                            break
+                    except:
+                        continue
                 st.success(f"Samjha: {user_prompt}")
                 os.remove(f_path)
                 st.session_state["temp_prompt"] = user_prompt
@@ -94,8 +92,8 @@ if p:
     user_prompt = p
 
 def get_ai_response(prompt_text, system_prompt):
-    # FIXED: High quota models - No more 429
-    models_to_try = ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-2.5-flash-lite", "gemini-2.0-flash-lite"]
+    # LATEST MODELS - NO 404
+    models_to_try = ["gemini-3.8-flash", "gemini-3.5-flash", "gemini-3.5-flash-lite", "gemini-3.6-flash"]
     for model_name in models_to_try:
         try:
             r = client.models.generate_content(
