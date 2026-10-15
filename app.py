@@ -63,9 +63,9 @@ if audio_input:
         with st.spinner("Samajh raha hu... Roman me likh raha hu..."):
             try:
                 uploaded = client.files.upload(file=f_path)
-                # FIX: Naya model use karo
+                # 3.5 MODEL - NO 429 ERROR
                 r = client.models.generate_content(
-                    model="gemini-3.8-flash",
+                    model="gemini-3.5-flash",
                     contents=[f"Transcribe this audio in ROMAN ENGLISH ONLY. Use only A-Z English letters. NEVER use Devanagari/Hindi/Bengali script. Language is {lang}:", uploaded]
                 )
                 user_prompt = r.text
@@ -85,8 +85,8 @@ if p:
     user_prompt = p
 
 def get_ai_response(prompt_text, system_prompt):
-    # FIX: Saare models naye wale
-    models_to_try = ["gemini-3.8-flash", "gemini-3.5-flash", "gemini-3.5-flash-lite"]
+    # PURE 3.5 MODELS - ZYADA QUOTA
+    models_to_try = ["gemini-3.5-flash", "gemini-3.5-flash-lite", "gemini-2.5-flash"]
     for model_name in models_to_try:
         try:
             r = client.models.generate_content(
