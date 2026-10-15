@@ -37,7 +37,51 @@ async def make_voice(text, vname, lang):
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-for m in st.session_state.messages:
-    st.chat_message(m["role"]).write(m["content"])
+lang = st.selectbox("Choose Language", ["Auto","English","Hindi","Khasi","Garo","Assamese"])
 
-lang = st.selectbox("Language", ["Auto","English","Hindi","Khasi","Garo","Assamese"])
+# YEH NAYA HAI - ab chat_input ki jagah text_input
+p = st.text_input("Yahan likho...", placeholder="Ask anything about Meghalaya...")
+btn = st.button("Send 🚀")
+
+# Purane messages dikhao
+for m in st.session_state.messages:
+    with st.chat_message(m["role"]):
+        st.write(m["content"])
+
+if btn and p:
+    st.session_state.messages.append({"role":"user","content":p})
+    with st.chat_message("user"):
+        st.write(p)
+    
+    with st.chat_message("assistant"):
+        box = st.empty()
+        box.markdown("Soch raha hu...")
+
+        SYSTEM = """
+        You are Megh-AI, Meghalaya's Own AI.
+        Never say you are Gemini or Google.
+        You have deep knowledge of Meghalaya: Khasi, Garo, Jaintia hills, Shillong, Cherrapunji, Dawki, Living Root Bridges, Wangala, Shad Suk Mynsiem, Jadoh, Dohneiiong.
+        If asked who you are, say: I am Megh-AI, Meghalaya's Own AI.
+        Reply in """ + lang
+
+        try:
+            r = client.models.generate_content(
+                model="gemini-2.0-flash",
+                contents=p,
+                config=types.GenerateContentConfig(system_instruction=SYSTEM)
+            )
+            ans = r.text
+        except Exception as e:
+            ans = "Error: " + str(e)[0:400]
+        
+        box.markdown(ans)
+
+        try:
+            vname = VOICE_MAN.get(lang, "en-IN-PrabhatNeural")
+            f = asyncio.run(make_voice(ans, vname, lang))
+            st.audio(f, autoplay=True)
+        except:
+            pass
+            
+    st.session_state.messages.append({"role":"assistant","content":ans})
+    st.rerun()
