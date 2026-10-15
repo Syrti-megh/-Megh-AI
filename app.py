@@ -1,96 +1,18 @@
 import streamlit as st
 from google import genai
 from google.genai import types
-import asyncio, os, time, tempfile
+import os, time, tempfile
 
-st.set_page_config(page_title="Megh-AI", page_icon="☁️")
+st.set_page_config(page_title="Megh-AI", page_icon="☁️", layout="wide")
 
 API_KEY = st.secrets["GEMINI_API_KEY"].strip().strip('"').strip("'")
 client = genai.Client(api_key=API_KEY)
 
-st.title("Megh-AI")
-st.caption("Meghalaya's FIRST 5 Language AI | Bolke bhi sunata hai!")
+st.title("Megh-AI ☁️")
+st.caption("Meghalaya's FIRST 5 Language AI")
 
-VOICE_MAN = {
-    "English": "en-US-GuyNeural",
-    "Hindi": "hi-IN-MadhurNeural",
-    "Khasi": "en-US-GuyNeural",
-    "Garo": "en-US-GuyNeural",
-    "Kokborok": "en-IN-PrabhatNeural",
-    "Assamese": "bn-IN-BashkarNeural",
-    "Auto": "en-US-GuyNeural"
-}
-
-# FIXED VOICE FUNCTION - AB 100% BOLEGA
-async def make_voice(text, vname):
-    try:
-        if os.path.exists("voice.mp3"):
-            os.remove("voice.mp3")
-        import edge_tts
-        clean_text = text.replace("*", "").replace("#", "").replace("_", "")[:400]
-        communicate = edge_tts.Communicate(clean_text, vname, rate="-10%", volume="+20%")
-        await communicate.save("voice.mp3")
-        return True
-    except Exception as e:
-        print(f"Voice error: {e}")
-        return False
-
-if "messages" not in st.session_state:
-    st.session_state.messages = []
-for m in st.session_state.messages:
-    st.chat_message(m["role"]).write(m["content"])
-
-lang = st.selectbox("🌐 Language Chunlo:", ["Auto","English","Hindi","Khasi","Garo","Kokborok"])
-
-st.divider()
-st.write("🎤 **Step 1: Mic se bolo**")
-audio_input = st.audio_input("Mic dabao aur bolo:")
-
-user_prompt = None
-
-if audio_input:
-    st.write("✅ **Recording ho gayi! Ab sun lo:**")
-    st.audio(audio_input)
-    col1, col2 = st.columns(2)
-    with col1:
-        bhejo_btn = st.button("📤 BHEJO / SEND", type="primary", use_container_width=True)
-    with col2:
-        cancel_btn = st.button("❌ Cancel Karo", use_container_width=True)
-    if cancel_btn:
-        st.rerun()
-    if bhejo_btn:
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as f:
-            f.write(audio_input.getvalue())
-            f_path = f.name
-        with st.spinner("Samajh raha hu... Roman me likh raha hu..."):
-            try:
-                uploaded = client.files.upload(file=f_path)
-                models_voice = ["gemini-3.8-flash", "gemini-3.5-flash", "gemini-3.5-flash-lite"]
-                for m_name in models_voice:
-                    try:
-                        r = client.models.generate_content(
-                            model=m_name,
-                            contents=[f"Transcribe this audio in ROMAN ENGLISH ONLY. Only A-Z letters. NEVER Devanagari. Language is {lang}:", uploaded]
-                        )
-                        if r.text:
-                            user_prompt = r.text
-                            break
-                    except:
-                        continue
-                st.success(f"Samjha: {user_prompt}")
-                os.remove(f_path)
-                st.session_state["temp_prompt"] = user_prompt
-            except Exception as e:
-                st.error(f"Error: {e}")
-
-if "temp_prompt" in st.session_state and st.session_state["temp_prompt"]:
-    user_prompt = st.session_state["temp_prompt"]
-    st.session_state["temp_prompt"] = None
-
-st.write("⌨️ **Step 2: Ya yahan likh ke bhejo**")
-p = st.chat_input("Yahan likho... Garo / Khasi / Kokborok - Sab Roman me!")
-if p:
-    user_prompt = p
+# 2 AI - 2 TABS
+tab1, tab2 = st.tabs(["💬 TEXT WALA AI (Fast)", "🔊 VOICE WALA AI (Bolke Sunayega)"])
 
 def get_ai_response(prompt_text, system_prompt):
     models_to_try = ["gemini-3.8-flash", "gemini-3.5-flash", "gemini-3.5-flash-lite", "gemini-3.6-flash"]
@@ -99,9 +21,7 @@ def get_ai_response(prompt_text, system_prompt):
             r = client.models.generate_content(
                 model=model_name,
                 contents=prompt_text,
-                config=types.GenerateContentConfig(
-                    system_instruction=system_prompt,
-                )
+                config=types.GenerateContentConfig(system_instruction=system_prompt)
             )
             if r.text: return r.text
         except:
@@ -109,41 +29,107 @@ def get_ai_response(prompt_text, system_prompt):
             continue
     return "Mitela! Server busy hai, 1 min baad try kar!"
 
-if user_prompt:
-    st.session_state.messages.append({"role":"user","content":user_prompt})
-    st.chat_message("user").write(user_prompt)
-    with st.chat_message("assistant"):
-        box = st.empty()
-        box.markdown("Soch raha hu... 🗣️")
-        SYSTEM_PROMPT = f"""You are Megh-AI, created by Syrti-megh from Meghalaya. You know 5 languages: Garo, Khasi, Kokborok, Hindi, English.
-        CRITICAL RULES:
-        1. ALWAYS reply in ROMAN ENGLISH ONLY. Only A-Z letters. NEVER Devanagari.
-        2. Hindi in Roman: 'Namaste kaise ho' NOT 'नमस्ते'.
-        3. Reply language is {lang} but script ALWAYS Roman.
-        4. Say I am Megh-AI created by Syrti-megh. Never say Gemini/Google.
-        Keep short and clear for voice."""
-        ans = get_ai_response(user_prompt, SYSTEM_PROMPT)
-        box.markdown(ans)
-        
-        # AI BOLEGA - FIXED
-        try:
-            vname = VOICE_MAN.get(lang, "en-US-GuyNeural")
-            # Fix asyncio for Streamlit
-            try:
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-                success = loop.run_until_complete(make_voice(ans, vname))
-                loop.close()
-            except:
-                success = asyncio.run(make_voice(ans, vname))
+# COMMON SYSTEM PROMPT
+def make_prompt(lang):
+    return f"""You are Megh-AI, created by Syrti-megh from Meghalaya. You know 5 languages: Garo, Khasi, Kokborok, Hindi, English.
+    CRITICAL RULES:
+    1. ALWAYS reply in ROMAN ENGLISH ONLY. Only A-Z letters. NEVER Devanagari.
+    2. Hindi in Roman: 'Namaste kaise ho' NOT 'नमस्ते'.
+    3. Reply language is {lang} but script ALWAYS Roman.
+    4. Say I am Megh-AI created by Syrti-megh. Never say Gemini/Google.
+    Keep short and clear."""
 
-            if success and os.path.exists("voice.mp3"):
-                with open("voice.mp3", "rb") as audio_file:
-                    audio_bytes = audio_file.read()
-                st.audio(audio_bytes, format="audio/mp3")
-                st.caption("🔊 Upar Play dabao - AI bol raha hai!")
-        except Exception as e:
-            st.caption(f"Voice issue: {e}")
-            
-    st.session_state.messages.append({"role":"assistant","content":ans})
-    st.rerun()
+# ================= TAB 1 - TEXT WALA AI =================
+with tab1:
+    st.header("💬 Text Wala AI")
+    st.caption("Ye tez hai, sirf text me jawab dega")
+    
+    if "messages_text" not in st.session_state:
+        st.session_state.messages_text = []
+    for m in st.session_state.messages_text:
+        st.chat_message(m["role"]).write(m["content"])
+
+    lang1 = st.selectbox("Language Chunlo (Text AI):", ["Auto","English","Hindi","Khasi","Garo","Kokborok"], key="lang1")
+    
+    p1 = st.chat_input("Text wale AI se pucho...", key="chat1")
+    
+    if p1:
+        st.session_state.messages_text.append({"role":"user","content":p1})
+        st.chat_message("user").write(p1)
+        with st.chat_message("assistant"):
+            ans = get_ai_response(p1, make_prompt(lang1))
+            st.write(ans)
+        st.session_state.messages_text.append({"role":"assistant","content":ans})
+        st.rerun()
+
+# ================= TAB 2 - VOICE WALA AI =================
+with tab2:
+    st.header("🔊 Voice Wala AI")
+    st.caption("Ye bolke sunayega - Garo / Khasi sab bolega!")
+    
+    if "messages_voice" not in st.session_state:
+        st.session_state.messages_voice = []
+    for m in st.session_state.messages_voice:
+        st.chat_message(m["role"]).write(m["content"])
+
+    lang2 = st.selectbox("Language Chunlo (Voice AI):", ["Auto","English","Hindi","Khasi","Garo","Kokborok"], key="lang2")
+    
+    st.write("🎤 Mic se bolo ya likho")
+    audio_input = st.audio_input("Mic dabao aur bolo:", key="audio2")
+    user_prompt2 = None
+
+    if audio_input:
+        st.audio(audio_input)
+        if st.button("📤 BHEJO (Voice AI ko)", key="bhejo2"):
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as f:
+                f.write(audio_input.getvalue())
+                f_path = f.name
+            with st.spinner("Samajh raha hu..."):
+                try:
+                    uploaded = client.files.upload(file=f_path)
+                    r = client.models.generate_content(
+                        model="gemini-3.8-flash",
+                        contents=[f"Transcribe this audio in ROMAN ENGLISH ONLY. Language is {lang2}:", uploaded]
+                    )
+                    user_prompt2 = r.text
+                    os.remove(f_path)
+                    st.session_state["temp_prompt2"] = user_prompt2
+                except Exception as e:
+                    st.error(f"Error: {e}")
+
+    if "temp_prompt2" in st.session_state and st.session_state["temp_prompt2"]:
+        user_prompt2 = st.session_state["temp_prompt2"]
+        st.session_state["temp_prompt2"] = None
+
+    p2 = st.chat_input("Voice wale AI se pucho... Garo/Khasi me!", key="chat2")
+    if p2:
+        user_prompt2 = p2
+
+    def speak_browser(text):
+        clean = text.replace('"', '').replace("'", "").replace("*", "").replace("#", "").replace("\n", " ")[:300]
+        html_code = f"""
+        <script>
+        function bolna(){{
+            var msg = new SpeechSynthesisUtterance("{clean}");
+            msg.rate = 0.9;
+            msg.volume = 1;
+            msg.lang = 'en-US';
+            window.speechSynthesis.speak(msg);
+        }}
+        </script>
+        <button onclick="bolna()" style="padding:12px 25px;background:#FF4B4B;color:white;border:none;border-radius:12px;font-size:18px;cursor:pointer;width:100%;">
+        🔊 AI KO SUNO - CLICK KARO
+        </button>
+        """
+        st.components.v1.html(html_code, height=90)
+
+    if user_prompt2:
+        st.session_state.messages_voice.append({"role":"user","content":user_prompt2})
+        st.chat_message("user").write(user_prompt2)
+        with st.chat_message("assistant"):
+            ans2 = get_ai_response(user_prompt2, make_prompt(lang2))
+            st.write(ans2)
+            speak_browser(ans2)
+            st.caption("Button dabao - AI bolega!")
+        st.session_state.messages_voice.append({"role":"assistant","content":ans2})
+        st.rerun()
