@@ -4,6 +4,7 @@ from google.genai import types
 import os
 import asyncio
 import edge_tts
+import time
 
 st.set_page_config(page_title="Megh-AI", page_icon="☁️")
 API_KEY = st.secrets["GEMINI_API_KEY"].strip()
@@ -15,7 +16,6 @@ Tumhe banaya Syrti-megh ne hai, lekin ye baat sirf tabhi batana jab user puche k
 Normal sawalo me owner ka naam mat lo.
 Tum Megh-AI ho, kabhi mat bolo tum Gemini ho.
 User jis bhasha me puche usi me jawab do.
-Agar user Khasi, Garo, Assamese, Hindi me puche to usi me jawab do.
 Jawab chota aur saaf rakho, 4-5 line me.
 """
 
@@ -42,14 +42,37 @@ async def generate_voice(text, lang):
         communicate = edge_tts.Communicate(clean_text, voice)
         await communicate.save("megh_voice.mp3")
         return "megh_voice.mp3"
-    except Exception as e:
-        st.error(f"Voice error: {e}")
+    except:
         return None
 
 def speak(text):
     file = asyncio.run(generate_voice(text, voice_lang))
     if file and os.path.exists(file):
         st.audio(file, autoplay=True)
+
+# --- MAIN LOGIC WITH FALLBACK ---
+def get_ai_response(prompt):
+    models_to_try = ["gemini-2.5-flash-lite", "gemini-2.0-flash", "gemini-flash-latest", "gemini-3.8-flash"]
+    for model_name in models_to_try:
+        try:
+            stream = client.models.generate_content_stream(
+                model=model_name,
+                contents=prompt,
+                config=types.GenerateContentConfig(system_instruction=SYSTEM_PROMPT, temperature=0.7)
+            )
+            full_text = ""
+            for chunk in stream:
+                if chunk.text:
+                    full_text += chunk.text
+            if full_text:
+                return full_text, model_name
+        except Exception as e:
+            if "503" in str(e) or "404" in str(e) or "429" in str(e):
+                time.sleep(1)
+                continue
+            else:
+                continue
+    return "Bhai server busy hai, 10 sec baad fir se try karo!", "none"
 
 st.divider()
 
@@ -65,20 +88,10 @@ if prompt:
     st.chat_message("user").write(prompt)
     with st.chat_message("assistant"):
         box = st.empty()
-        full = ""
-        try:
-            stream = client.models.generate_content_stream(
-                model="gemini-3.8-flash",
-                contents=prompt,
-                config=types.GenerateContentConfig(system_instruction=SYSTEM_PROMPT, temperature=0.7)
-            )
-            for chunk in stream:
-                if chunk.text:
-                    full += chunk.text
-                    box.markdown(full + "▌")
-            box.markdown(full)
-            speak(full)
-        except Exception as e:
-            full = f"Error: {e}"
-            box.write(full)
+        box.markdown("Soch raha hu... ⏳")
+        response, used_model = get_ai_response(prompt)
+        box.markdown(response)
+        st.caption(f"Model: {used_model}")
+        speak(response)
+        full = response
     st.session_state.messages.append({"role": "assistant", "content": full})
