@@ -21,23 +21,19 @@ VOICE_MAN = {
     "Auto": "en-US-GuyNeural"
 }
 
-# AI BOLEGA - VOICE FUNCTION
-async def make_voice(text, vname, lang):
+# FIXED VOICE FUNCTION - AB 100% BOLEGA
+async def make_voice(text, vname):
     try:
         if os.path.exists("voice.mp3"):
             os.remove("voice.mp3")
         import edge_tts
-        # Clean text for voice
-        clean_text = text.replace("*", "").replace("'", " ").replace("!", ".").replace("#", "").replace("_", "")[:450]
-        rate = "-20%" if lang in ["Khasi", "Garo", "Kokborok"] else "-10%"
-        volume = "+20%"
-        pitch = "+2Hz"
-        communicate = edge_tts.Communicate(clean_text, vname, rate=rate, volume=volume, pitch=pitch)
+        clean_text = text.replace("*", "").replace("#", "").replace("_", "")[:400]
+        communicate = edge_tts.Communicate(clean_text, vname, rate="-10%", volume="+20%")
         await communicate.save("voice.mp3")
-        return "voice.mp3"
+        return True
     except Exception as e:
         print(f"Voice error: {e}")
-        return None
+        return False
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -129,17 +125,25 @@ if user_prompt:
         ans = get_ai_response(user_prompt, SYSTEM_PROMPT)
         box.markdown(ans)
         
-        # AI BOLEGA - YAHAN VOICE AYEGA
+        # AI BOLEGA - FIXED
         try:
             vname = VOICE_MAN.get(lang, "en-US-GuyNeural")
-            voice_file = asyncio.run(make_voice(ans, vname, lang))
-            if voice_file and os.path.exists(voice_file):
-                st.success("🔊 AI bol raha hai...")
-                st.audio(voice_file, autoplay=True)
-            else:
-                st.warning("Voice file nahi bana")
+            # Fix asyncio for Streamlit
+            try:
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                success = loop.run_until_complete(make_voice(ans, vname))
+                loop.close()
+            except:
+                success = asyncio.run(make_voice(ans, vname))
+
+            if success and os.path.exists("voice.mp3"):
+                with open("voice.mp3", "rb") as audio_file:
+                    audio_bytes = audio_file.read()
+                st.audio(audio_bytes, format="audio/mp3")
+                st.caption("🔊 Upar Play dabao - AI bol raha hai!")
         except Exception as e:
-            st.error(f"Voice Error: {e}")
+            st.caption(f"Voice issue: {e}")
             
     st.session_state.messages.append({"role":"assistant","content":ans})
     st.rerun()
