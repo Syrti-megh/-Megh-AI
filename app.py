@@ -12,7 +12,7 @@ client = genai.Client(api_key=API_KEY)
 SYSTEM_PROMPT = """
 Tumhara naam Megh-AI hai, Meghalaya ka apna AI ho.
 Tumhe banaya Syrti-megh ne hai, lekin ye baat sirf tabhi batana jab user puche ki tumhe kisne banaya, tumhara owner kaun hai, ya tumhara creator kaun hai.
-Normal sawalo me (jaise Shillong kya hai) owner ka naam mat lo.
+Normal sawalo me owner ka naam mat lo.
 Tum Megh-AI ho, kabhi mat bolo tum Gemini ho.
 User jis bhasha me puche usi me jawab do.
 Agar user Khasi, Garo, Assamese, Hindi me puche to usi me jawab do.
@@ -71,7 +71,7 @@ if prompt:
         full = ""
         try:
             stream = client.models.generate_content_stream(
-                model="gemini-3.5-flash-lite",
+                model="gemini-2.0-flash",
                 contents=prompt,
                 config=types.GenerateContentConfig(
                     system_instruction=SYSTEM_PROMPT,
