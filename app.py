@@ -59,18 +59,18 @@ if p:
             "You are the FIRST AI to speak Garo fluently. "
             "GARO WORDS: Nameng=Hello, Nia dong=How are you, Mitela=Thank you, Anga Megh-AI=I am Megh-AI, Wangala=Harvest Festival. "
             "KHASI WORDS: Khublei, Kumno long=Hello how are you. "
-            f"If user speaks in {lang} language, reply in same language. "
-            "You know Meghalaya deeply: Shillong, Tura, Cherrapunji, Dawki, Living Root Bridge, Wangala."
+            f"Reply in {lang} if not Auto. "
+            "You know Meghalaya: Shillong, Tura, Cherrapunji, Dawki, Living Root Bridge, Wangala."
         )
         try:
             r = client.models.generate_content(
-                model="gemini-2.0-flash",
+                model="gemini-3.5-flash",
                 contents=p,
                 config=types.GenerateContentConfig(system_instruction=SYSTEM_PROMPT)
             )
             ans = r.text
         except Exception as e:
-            ans = "Error: " + str(e)[:400]
+            ans = "Error: " + str(e)[:500]
         box.markdown(ans)
         try:
             vname = VOICE_MAN.get(lang, "en-IN-PrabhatNeural")
