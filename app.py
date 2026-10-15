@@ -23,8 +23,7 @@ st.title("☁️ Megh-AI")
 st.caption("Meghalaya's Own AI - Boy Voice | Clear Vocal")
 
 st.sidebar.title("🔊 Voice Setting")
-voice_lang = st.sidebar.selectbox("Voice Language:",
-    ["Hindi", "English", "Khasi", "Garo", "Assamese"])
+voice_lang = st.sidebar.selectbox("Voice Language:", ["Hindi", "English", "Khasi", "Garo", "Assamese"])
 
 voice_map = {
     "Hindi": "hi-IN-MadhurNeural",
@@ -64,18 +63,14 @@ prompt = st.chat_input("Ask anything...")
 if prompt:
     st.session_state.messages.append({"role": "user", "content": prompt})
     st.chat_message("user").write(prompt)
-
     with st.chat_message("assistant"):
         box = st.empty()
         full = ""
         try:
             stream = client.models.generate_content_stream(
-                model="gemini-2.5-flash",
+                model="gemini-3.8-flash",
                 contents=prompt,
-                config=types.GenerateContentConfig(
-                    system_instruction=SYSTEM_PROMPT,
-                    temperature=0.7
-                )
+                config=types.GenerateContentConfig(system_instruction=SYSTEM_PROMPT, temperature=0.7)
             )
             for chunk in stream:
                 if chunk.text:
@@ -83,9 +78,7 @@ if prompt:
                     box.markdown(full + "▌")
             box.markdown(full)
             speak(full)
-
         except Exception as e:
             full = f"Error: {e}"
             box.write(full)
-
     st.session_state.messages.append({"role": "assistant", "content": full})
