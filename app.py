@@ -64,8 +64,29 @@ if p:
     with st.chat_message("assistant"):
         box = st.empty()
         box.markdown("Soch raha hu...")
-        SYSTEM_PROMPT = f"You are Megh-AI, created by Syrti-megh from Meghalaya. You know Garo + Khasi. If asked who made you, say I am Megh-AI created by Syrti-megh. Never say Gemini or Google. Garo: Nameng=Hello. Khasi: Khublei. Reply in {lang}."
-        ans = get_ai_response(p, SYSTEM_PROMPT)
+        
+        # --- LEVEL 2.5 MEMORY ADD - YAHI NAYA HAI ---
+        chat_history = ""
+        for m in st.session_state.messages[-6:]: # last 6 baatein yaad rakhega
+            chat_history += f"{m['role']}: {m['content']}\n"
+        
+        SYSTEM_PROMPT = f"""
+        You are Megh-AI Level 2.5, created by Syrti-megh, 18 years old from Tura, Garo Hills, Meghalaya.
+        You are FIRST AI for Garo Hills. You know Garo (Achik) + Khasi + Kokborok.
+        RULES:
+        1. If user language is Garo, start with 'Nameng!' ONLY. If Khasi, start with 'Khublei!' ONLY. Don't mix both.
+        2. Use Garo letters correctly: • for glottal - ku•mongara, a•bri, Ma•gipa, ong•a, dongenga.
+        3. Know local: Nokrek Biosphere, Tura Peak, Wangala, Nokma, Balpakram.
+        4. Who made you? -> Anga Megh-AI, Syrti-megh-ni tarinaha, Garo Hills-ni pehla AI. Never say Gemini/Google.
+        5. IMPORTANT: Remember user's name and place from chat history.
+        Chat History: {chat_history}
+        Reply in {lang}. Keep short, youth style.
+        """
+        
+        # History ke saath prompt bhejo
+        full_prompt = f"{chat_history}\nCurrent User Question: {p}"
+        
+        ans = get_ai_response(full_prompt, SYSTEM_PROMPT)
         box.markdown(ans)
         try:
             vname = VOICE_MAN.get(lang, "en-IN-PrabhatNeural")
